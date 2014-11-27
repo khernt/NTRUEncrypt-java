@@ -789,7 +789,7 @@ public class NtruEncryptKey
         int mLen = 0;
         if (M.length >= db + keyParams.lLen)
           mLen = parseMsgLengthFromM(M);
-        if ((mLen < 0) || (mLen >= keyParams.maxMsgLenBytes))
+        if ((mLen < 0) || (mLen > keyParams.maxMsgLenBytes))
         {
             // Set mLen to 1 so that later steps won't have to worry
             // about invalid values.

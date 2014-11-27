@@ -427,7 +427,7 @@ public class NtruEncryptKeyTestCase {
 
         byte M[] = new byte[keyParams.N];
         java.util.Arrays.fill(M, (byte) 0);
-        M[keyParams.db/8] = (byte) 401;
+        M[keyParams.db/8] = (byte) (keyParams.maxMsgLenBytes+1);
         assertEquals(-1, keys.verifyMFormat(M));
     }
 
@@ -457,10 +457,19 @@ public class NtruEncryptKeyTestCase {
             byte M[] = new byte[keyParams.db/8 + keyParams.lLen +
                                 keyParams.maxMsgLenBytes + 1];
             java.util.Arrays.fill(M, (byte) 0);
-            M[keyParams.db/8] = (byte) 1;
-            java.util.Arrays.fill(M, keyParams.db/8+keyParams.lLen,
-                                  keyParams.db/8+keyParams.lLen+1, (byte) 22);
-            assertEquals(1, keys.verifyMFormat(M));
+
+            if(keyParams.maxMsgLenBytes < 256)
+            {
+                M[keyParams.db/8] = (byte) keyParams.maxMsgLenBytes;
+            }else{
+                M[keyParams.db/8] = (byte) (keyParams.maxMsgLenBytes >> 8);
+                M[keyParams.db/8+1] = (byte) keyParams.maxMsgLenBytes;
+            }
+            java.util.Arrays.fill(M,
+                        keyParams.db/8+keyParams.lLen,
+                        keyParams.db/8+keyParams.lLen+keyParams.maxMsgLenBytes,
+                        (byte) 22);
+            assertEquals(keyParams.maxMsgLenBytes, keys.verifyMFormat(M));
         }
     }
 
