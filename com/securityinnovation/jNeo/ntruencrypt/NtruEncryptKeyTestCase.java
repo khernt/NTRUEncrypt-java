@@ -1,24 +1,23 @@
 /******************************************************************************
  * NTRU Cryptography Reference Source Code
- * Copyright (c) 2009-2013, by Security Innovation, Inc. All rights reserved.
  *
- * Copyright (C) 2009-2013  Security Innovation
+ * Copyright (C) 2009-2016  Security Innovation (SI)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * SI has dedicated the work to the public domain by waiving all of its rights
+ * to the work worldwide under copyright law, including all related and
+ * neighboring rights, to the extent allowed by law.
+ *
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * You can copy, modify, distribute and perform the work, even for commercial
+ * purposes, all without asking permission. You should have received a copy of
+ * the creative commons license (CC0 1.0 universal) along with this program.
+ * See the license file for more information. 
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
  *********************************************************************************/
-
 package com.securityinnovation.jNeo.ntruencrypt;
 
 import java.io.ByteArrayInputStream;
@@ -427,7 +426,7 @@ public class NtruEncryptKeyTestCase {
 
         byte M[] = new byte[keyParams.N];
         java.util.Arrays.fill(M, (byte) 0);
-        M[keyParams.db/8] = (byte) (keyParams.maxMsgLenBytes+1);
+        M[keyParams.db/8] = (byte) 401;
         assertEquals(-1, keys.verifyMFormat(M));
     }
 
@@ -457,19 +456,10 @@ public class NtruEncryptKeyTestCase {
             byte M[] = new byte[keyParams.db/8 + keyParams.lLen +
                                 keyParams.maxMsgLenBytes + 1];
             java.util.Arrays.fill(M, (byte) 0);
-
-            if(keyParams.maxMsgLenBytes < 256)
-            {
-                M[keyParams.db/8] = (byte) keyParams.maxMsgLenBytes;
-            }else{
-                M[keyParams.db/8] = (byte) (keyParams.maxMsgLenBytes >> 8);
-                M[keyParams.db/8+1] = (byte) keyParams.maxMsgLenBytes;
-            }
-            java.util.Arrays.fill(M,
-                        keyParams.db/8+keyParams.lLen,
-                        keyParams.db/8+keyParams.lLen+keyParams.maxMsgLenBytes,
-                        (byte) 22);
-            assertEquals(keyParams.maxMsgLenBytes, keys.verifyMFormat(M));
+            M[keyParams.db/8] = (byte) 1;
+            java.util.Arrays.fill(M, keyParams.db/8+keyParams.lLen,
+                                  keyParams.db/8+keyParams.lLen+1, (byte) 22);
+            assertEquals(1, keys.verifyMFormat(M));
         }
     }
 
