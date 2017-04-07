@@ -83,7 +83,7 @@ public class PolynomialInverterModPowerOfPrime extends PolynomialInverterModPrim
           return null;
 
         int q = prime;
-        while (q < powerOfPrime)
+        do
         {
             q *= q;
 
@@ -97,8 +97,12 @@ public class PolynomialInverterModPowerOfPrime extends PolynomialInverterModPrim
             for (int i=1; i<b.p.length; i++)
               c.p[i] = (short) (q-c.p[i]); // This is -c (mod q)
             //    iii: b = b*(2-a*b) mod q
-            b = FullPolynomial.convolution(b, c, q);
-        }
+            if (q>powerOfPrime)
+            	b = FullPolynomial.convolution(b, c, powerOfPrime);
+            else
+            	b = FullPolynomial.convolution(b, c, q);
+        }while (q < powerOfPrime);
+        
         return b;
     }
 }
