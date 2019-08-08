@@ -14,11 +14,11 @@
  * You can copy, modify, distribute and perform the work, even for commercial
  * purposes, all without asking permission. You should have received a copy of
  * the creative commons license (CC0 1.0 universal) along with this program.
- * See the license file for more information. 
+ * See the license file for more information.
  *
  *
  *********************************************************************************/
- 
+
 import java.io.IOException;
 import java.io.File;
 import java.io.InputStream;
@@ -67,11 +67,11 @@ public class Sample
         throws IOException, NtruException
     {
         NtruEncryptKey k = NtruEncryptKey.genKey(oid, prng);
-        
+
         FileOutputStream pubFile = new FileOutputStream(pubFileName);
         pubFile.write(k.getPubKey());
         pubFile.close();
-        
+
         FileOutputStream privFile = new FileOutputStream(privFileName);
         privFile.write(k.getPrivKey());
         privFile.close();
@@ -132,7 +132,7 @@ public class Sample
         long fileLength = inFile.length();
         if (fileLength > Integer. MAX_VALUE)
           throw new IOException("file to be encrypted is too large");
-        
+
         // Read the contents of the file
         InputStream in = new FileInputStream(inFile);
         byte buf[] = new byte[(int)fileLength];
@@ -148,7 +148,7 @@ public class Sample
             KeyGenerator keygen = KeyGenerator.getInstance("AES");
             keygen.init(128);
             SecretKey aesKey = keygen.generateKey();
-            
+
             // Get an IV
             ivBytes = new byte[16];
             prng.read(ivBytes);
@@ -182,7 +182,64 @@ public class Sample
         fileOS.close();
     }
 
+    public static void encryptFileMultiple( NtruEncryptKey ntruKey, Random  prng, String  inFileName,
+            String  outFileName, int times)
+            throws IOException, NtruException
+        {
+            // Get the input size
+            File inFile = new File(inFileName);
+            long fileLength = inFile.length();
+            if (fileLength > Integer. MAX_VALUE)
+              throw new IOException("file to be encrypted is too large");
 
+            // Read the contents of the file
+            InputStream in = new FileInputStream(inFile);
+            byte buf[] = new byte[(int)fileLength];
+            in.read(buf);
+            in.close();
+
+            byte ivBytes[] = null;
+            byte encryptedBuf[] = null;
+            byte wrappedAESKey[] = null;
+            try
+            {
+                // Get an AES key
+                KeyGenerator keygen = KeyGenerator.getInstance("AES");
+                keygen.init(128);
+                SecretKey aesKey = keygen.generateKey();
+
+                // Get an IV
+                ivBytes = new byte[16];
+                prng.read(ivBytes);
+                IvParameterSpec iv = new IvParameterSpec(ivBytes);
+
+                // Encrypt the plaintext, then zero it out
+                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                cipher.init(Cipher.ENCRYPT_MODE, aesKey, iv);
+                encryptedBuf = cipher.doFinal(buf);
+                java.util.Arrays.fill(buf, (byte)0);
+
+                // Wrap the AES key with the NtruEncrypt key
+                byte aesKeyBytes[] = aesKey.getEncoded();
+                wrappedAESKey = ntruKey.encrypt(aesKeyBytes, prng);
+                java.util.Arrays.fill(aesKeyBytes, (byte)0);
+
+            } catch (java.security.GeneralSecurityException e) {
+                System.out.println("AES error: " + e);
+            }
+
+            // Write it to the output file
+            FileOutputStream fileOS = new FileOutputStream(outFileName);
+            DataOutputStream out = new DataOutputStream(fileOS);
+            out.writeInt(ivBytes.length);
+            out.write(ivBytes);
+            out.writeInt(wrappedAESKey.length);
+            out.write(wrappedAESKey);
+            out.writeInt(encryptedBuf.length);
+            out.write(encryptedBuf);
+            out.close();
+            fileOS.close();
+        }
 
     /**
      * Decrypt a file, reversing the <code>encryptFile</code> operation.
@@ -202,14 +259,14 @@ public class Sample
         // Get the input size
         File inFile = new File(inFileName);
         long fileLength = inFile.length();
-            
+
         // Parse the contents of the encrypted file
         DataInputStream in = new DataInputStream(new FileInputStream(inFile));
         byte ivBytes[] = new byte[in.readInt()];
         in.readFully(ivBytes);
         byte wrappedKey[] = new byte[in.readInt()];
         in.readFully(wrappedKey);
-        byte encFileContents[] = new byte[in.readInt()]; 
+        byte encFileContents[] = new byte[in.readInt()];
         in.readFully(encFileContents);
 
         byte fileContents[] = null;
@@ -219,7 +276,7 @@ public class Sample
             byte aesKeyBytes[] = ntruKey.decrypt(wrappedKey);
             SecretKeySpec aesKey = new SecretKeySpec(aesKeyBytes, "AES");
             java.util.Arrays.fill(aesKeyBytes, (byte) 0);
-            
+
             // Decrypt the file contents
             IvParameterSpec iv = new IvParameterSpec(ivBytes);
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -229,7 +286,7 @@ public class Sample
             System.out.println("AES error: " + e);
         }
 
-        // Write it 
+        // Write it
         OutputStream out = new FileOutputStream(outFileName);
         out.write(fileContents);
         out.close();
@@ -303,20 +360,33 @@ public class Sample
             Random prng = createSeededRandom();
             OID oid = parseOIDName(args[1]);
             setupNtruEncryptKey(prng, oid, pubkeyFile, privkeyFile);
+            System.out.println("Setup Complete");
         }
-        else if (args[0].equals("-encrypt"))
+        else if (args[0].equals("1"))
         {
-            if (args.length != 3) usage();
+            //if (args.length != 3) usage();
             // Setup PRNG
             Random prng = createSeededRandom();
             NtruEncryptKey pubKey = loadKey(pubkeyFile);
-            encryptFile(pubKey, prng, args[1], args[2]);
+            
+            //Files
+            String rawData = "./sample/input";
+            String encData = "encData.txt";
+            //encryptFile(pubKey, prng, args[1], args[2]);
+            encryptFile(pubKey, prng, rawData, encData);
+            encryptFile(pubKey, prng, encData, encData);
+            System.out.println("Encryption Complete");
         }
-        else if (args[0].equals("-decrypt"))
+        else if (args[0].equals("2"))
         {
-            if (args.length != 3) usage();
+        	String encData = "encData.txt";
+        	String decData = "decData.txt";
+        	
+            //if (args.length != 3) usage();
             NtruEncryptKey privKey = loadKey(privkeyFile);
-            decryptFile(privKey, args[1], args[2]);
+            decryptFile(privKey, encData, decData);
+            decryptFile(privKey, decData, decData);
+            System.out.println("Decryption Complete");
         }
         else
           usage();

@@ -20,7 +20,7 @@
  *********************************************************************************/
 
 package com.securityinnovation.testvectors;
-
+/*
 import java.util.Arrays;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
@@ -88,3 +88,5 @@ public class NtruEncryptTestVectorGenerator
         }
     }
 }
+
+*/
